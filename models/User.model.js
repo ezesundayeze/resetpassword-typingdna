@@ -11,6 +11,10 @@ const userSchema = new Schema(
       required: true,
       unique: true,
     },
+    userTypingId: {
+      type: String,
+      unique: true,
+    },
     email: {
       type: String,
       trim: true,

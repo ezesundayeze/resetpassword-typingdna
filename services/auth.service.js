@@ -15,21 +15,36 @@ const signup = async (data) => {
   if (user) {
     throw new Error("Email already exist", 422);
   }
+
+  // Generate random user id
+  let userTypingId = crypto.randomBytes(10).toString("hex");
+
+  data.userTypingId = userTypingId;
+
   const patternResponse = await axios({
     method: "post",
-    url: `https://api.typingdna.com/auto/${data.name}`,
+    url: `https://api.typingdna.com/auto/${userTypingId}`,
     data: {
       tp: data.pattern,
     },
     auth: {
-      username: "apiKey",
-      password: "apiSecret",
+      username: process.env.TYPINGDNA_USERNAME,
+      password: process.env.TYPINGDNA_PASSWORD,
     },
-  });
+  })
+    .catch((error) => {
+      return error.message;
+    })
+    .then((response) => {
+      console.log("Success enrolment: " + JSON.stringify(response.data));
+      return response.data;
+    });
 
   user = new User(data);
   const token = JWT.sign({ id: user._id }, JWTSecret);
   await user.save();
+
+  console.log(" user :" + user);
 
   return (data = {
     userId: user._id,
@@ -71,29 +86,32 @@ const requestPasswordReset = async (email) => {
 };
 
 const resetPassword = async (userId, token, password, pattern) => {
-  // let passwordResetToken = await Token.findOne({ userId });
+  let passwordResetToken = await Token.findOne({ userId });
   const user1 = await User.findById({ _id: userId });
 
   const patternResponse = await axios({
     method: "post",
-    url: `https://api.typingdna.com/verify/${user1.name}`,
+    url: `https://api.typingdna.com/auto/${user1.userTypingId}`,
     data: {
       tp: pattern,
       quality: 2,
     },
     auth: {
-      username: "apiKey",
-      password: "apiSecret",
+      username: process.env.TYPINGDNA_USERNAME,
+      password: process.env.TYPINGDNA_PASSWORD,
     },
   })
     .catch((error) => {
-      // console.log(error.message);
-      return error;
+      return error.message;
     })
     .then((response) => {
+      console.log("Success verification: " + JSON.stringify(response.data));
       return response.data;
     });
 
+  if (!patternResponse) {
+    throw new Error("Invalid Pattern");
+  }
   if (patternResponse.status != 200) {
     const result = await patternResponse;
     throw new Error(result.message);

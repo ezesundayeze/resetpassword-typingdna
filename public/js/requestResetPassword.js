@@ -16,5 +16,9 @@ form.addEventListener("submit", async (e) => {
 
   if (response.status == 200) {
     //
+    alert(
+      "Your password reset request was sent successfully, check your email to complete your password reset"
+    );
+    // window.location = `http://${response.data}`;
   }
 });
