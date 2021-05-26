@@ -73,7 +73,7 @@ const requestPasswordReset = async (email) => {
 
   const link = `${clientURL}/resetPassword?token=${resetToken}&id=${user._id}`;
 
-  sendEmail(
+  await sendEmail(
     user.email,
     "Password Reset Request",
     {
@@ -92,10 +92,6 @@ const resetPassword = async (userId, token, password, pattern) => {
   const patternResponse = await axios({
     method: "post",
     url: `https://api.typingdna.com/auto/${user1.userTypingId}`,
-    data: {
-      tp: pattern,
-      quality: 2,
-    },
     auth: {
       username: process.env.TYPINGDNA_USERNAME,
       password: process.env.TYPINGDNA_PASSWORD,
@@ -112,7 +108,7 @@ const resetPassword = async (userId, token, password, pattern) => {
   if (!patternResponse) {
     throw new Error("Invalid Pattern");
   }
-  if (patternResponse.status != 200) {
+  if (patternResponse.status != 200 && patternResponse.data.result=='1' ) {
     const result = await patternResponse;
     throw new Error(result.message);
   }
@@ -137,7 +133,7 @@ const resetPassword = async (userId, token, password, pattern) => {
 
   const user = await User.findById({ _id: userId });
 
-  sendEmail(
+  await sendEmail(
     user.email,
     "Password Reset Successfully",
     {
